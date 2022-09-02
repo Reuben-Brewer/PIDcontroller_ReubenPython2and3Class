@@ -6,7 +6,7 @@ reuben.brewer@gmail.com
 www.reubotics.com
 
 Apache 2 License
-Software Revision D, 07/18/2022
+Software Revision E, 08/29/2022
 
 Verified working on: Python 2.7, 3.8 for Windows 8.1, 10 64-bit and Raspberry Pi Buster (no Mac testing yet).
 '''
@@ -26,6 +26,7 @@ import time
 import datetime
 import math
 import collections
+from copy import * #for deepcopy(dict)
 import inspect #To enable 'TellWhichFileWereIn'
 import threading
 import traceback
@@ -84,17 +85,6 @@ class PIDcontroller_ReubenPython2and3Class(Frame): #Subclass the Tkinter Frame
         self.LastTime_CalculatedFromUpdateFunction = -11111.0
         self.DataStreamingFrequency_CalculatedFromUpdateFunction = -11111.0
         self.DataStreamingDeltaT_CalculatedFromUpdateFunction = -11111.0
-
-        self.ActualValue = 0.0
-        self.ActualValue_last = 0.0
-
-        self.ActualValueDot = 0.0
-        self.ActualValueDot_Filtered = 0.0
-
-        self.Error = 0.0
-        self.ErrorSum = 0.0
-        self.ErrorDot = 0.0
-        self.CorrectiveCommandToIssue = 0.0
 
         self.MostRecentDataDict = dict()
         #########################################################
@@ -291,6 +281,18 @@ class PIDcontroller_ReubenPython2and3Class(Frame): #Subclass the Tkinter Frame
 
         #########################################################
         #########################################################
+        if "NumberOfVariablesToTrack" in setup_dict:
+            self.NumberOfVariablesToTrack = int(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("NumberOfVariablesToTrack", setup_dict["NumberOfVariablesToTrack"], 1, 10))
+
+        else:
+            self.NumberOfVariablesToTrack = 1
+
+        print("PIDcontroller_ReubenPython2and3Class __init__: NumberOfVariablesToTrack: " + str(self.NumberOfVariablesToTrack))
+        #########################################################
+        #########################################################
+
+        #########################################################
+        #########################################################
         if "Kp" in setup_dict:
             self.Kp = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("Kp", setup_dict["Kp"], -sys.float_info.max, sys.float_info.max)
 
@@ -351,9 +353,11 @@ class PIDcontroller_ReubenPython2and3Class(Frame): #Subclass the Tkinter Frame
 
         #########################################################
         #########################################################
-        self.ActualValueDot_LowPassFilter_ReubenPython2and3ClassObject = LowPassFilter_ReubenPython2and3Class(dict([("UseMedianFilterFlag", 0),
-                                                    ("UseExponentialSmoothingFilterFlag", 1),
-                                                    ("ExponentialSmoothingFilterLambda", self.ActualValueDot_ExponentialFilterLambda)]))
+        self.ActualValueDot_LowPassFilter_ReubenPython2and3ClassObject = list()
+        for index in range(0, self.NumberOfVariablesToTrack):
+            self.ActualValueDot_LowPassFilter_ReubenPython2and3ClassObject.append(LowPassFilter_ReubenPython2and3Class(dict([("UseMedianFilterFlag", 0),
+                                                        ("UseExponentialSmoothingFilterFlag", 1),
+                                                        ("ExponentialSmoothingFilterLambda", self.ActualValueDot_ExponentialFilterLambda)])))
         #########################################################
         #########################################################
 
@@ -367,8 +371,31 @@ class PIDcontroller_ReubenPython2and3Class(Frame): #Subclass the Tkinter Frame
 
         #########################################################
         #########################################################
+        self.ActualValue = [0.0]*self.NumberOfVariablesToTrack
+        self.ActualValue_last = [0.0]*self.NumberOfVariablesToTrack
+
+        self.ActualValueDot_Raw = [0.0] * self.NumberOfVariablesToTrack
+        self.ActualValueDot_Filtered = [0.0]*self.NumberOfVariablesToTrack
+
+        self.Error = [0.0]*self.NumberOfVariablesToTrack
+        self.ErrorSum = [0.0]*self.NumberOfVariablesToTrack
+        self.ErrorDot = [0.0]*self.NumberOfVariablesToTrack
+        self.CorrectiveCommandToIssue = [0.0]*self.NumberOfVariablesToTrack
+
+        self.DataUpdateNumber = 0
+        #########################################################
+        #########################################################
+
+        #########################################################
+        #########################################################
         if self.USE_GUI_FLAG == 1:
             self.StartGUI(self.root)
+        #########################################################
+        #########################################################
+
+        #########################################################
+        #########################################################
+        time.sleep(0.5)
         #########################################################
         #########################################################
 
@@ -497,88 +524,150 @@ class PIDcontroller_ReubenPython2and3Class(Frame): #Subclass the Tkinter Frame
 
     ##########################################################################################################
     ##########################################################################################################
-    def UpdatePIDloopError(self, ActualValue, DesiredValue, ActualValueDot = -11111.0, DesiredValueDot = 0.0):
+    def UpdatePIDloopError(self, ActualValue, DesiredValue, ActualValueDot = -11111.0, DesiredValueDot = -11111.0):
 
-        #print("UpdatePIDloopError event fired!")
+        # print("UpdatePIDloopError event fired!")
 
-        #########################
+        #########################################################
+        if self.IsInputList(ActualValue) == 0:
+            ActualValue = list([ActualValue])
+
+        if len(ActualValue) != self.NumberOfVariablesToTrack:
+            print("UpdatePIDloopError: ERROR, len(ActualValue) must match self.NumberOfVariablesToTrack = " +
+                  str(self.NumberOfVariablesToTrack) +
+                  ", bad value provided was " +
+                  str(ActualValue))
+            return
+        #########################################################
+
+        #########################################################
+        if self.IsInputList(DesiredValue) == 0:
+            DesiredValue = list([DesiredValue])
+
+        if len(DesiredValue) != self.NumberOfVariablesToTrack:
+            print("UpdatePIDloopError: ERROR, len(DesiredValue) must match self.NumberOfVariablesToTrack = " +
+                  str(self.NumberOfVariablesToTrack) +
+                  ", bad value provided was " +
+                  str(DesiredValue))
+            return
+        #########################################################
+
+        #########################################################
+        if self.IsInputList(ActualValueDot) == 0:
+            ActualValueDot = list([ActualValueDot])
+
+        if ActualValueDot[0] == -11111.0:
+            ActualValueDot = list([-11111.0]*self.NumberOfVariablesToTrack)
+
+        if len(ActualValueDot) != self.NumberOfVariablesToTrack:
+            print("UpdatePIDloopError: ERROR, len(ActualValueDot) must match self.NumberOfVariablesToTrack = " +
+                  str(self.NumberOfVariablesToTrack) +
+                  ", bad value was " +
+                  str(ActualValueDot))
+            return
+        #########################################################
+
+        #########################################################
+        if self.IsInputList(DesiredValueDot) == 0:
+            DesiredValueDot = list([DesiredValueDot])
+
+        if DesiredValueDot[0] == -11111.0:
+            DesiredValueDot = list([-11111.0]*self.NumberOfVariablesToTrack)
+
+        if len(DesiredValueDot) != self.NumberOfVariablesToTrack:
+            print("UpdatePIDloopError: ERROR, len(DesiredValueDot) must match self.NumberOfVariablesToTrack = " +
+                  str(self.NumberOfVariablesToTrack) +
+                  ", bad value was " +
+                  str(DesiredValueDot))
+            return
+        #########################################################
+
+        #########################################################
         self.CurrentTime_CalculatedFromUpdateFunction = self.getPreciseSecondsTimeStampString()
         self.UpdateFrequencyCalculation_CalculatedFromUpdateFunction()
-        #########################
+        self.DataUpdateNumber = self.DataUpdateNumber + 1
+        #########################################################
 
-        #########################
-        self.ActualValue = ActualValue
-        self.DesiredValue = DesiredValue
-        self.DesiredValueDot = DesiredValueDot
-        #########################
+        #########################################################
+        self.ActualValue = list(ActualValue)
+        self.DesiredValue = list(DesiredValue)
+        self.DesiredValueDot = list(DesiredValueDot)
+        #########################################################
 
-        #########################
+        #########################################################
         if self.USE_GUI_FLAG == 1:
-            self.MostRecentDataDict = self.EntryListWithBlinking_ReubenPython2and3ClassObject.GetMostRecentDataDict() #Get latest gain values
+            EntryListWithBlinking_MostRecentDataDict_LocalCopy = self.EntryListWithBlinking_ReubenPython2and3ClassObject.GetMostRecentDataDict() #Get latest gain values
 
-            self.Kp = self.MostRecentDataDict["Kp"]
-            self.Ki = self.MostRecentDataDict["Ki"]
-            self.Kd = self.MostRecentDataDict["Kd"]
-            self.ErrorSumMax = self.MostRecentDataDict["ErrorSumMax"]
-            self.ActualValueDot_ExponentialFilterLambda = self.MostRecentDataDict["ActualValueDot_ExponentialFilterLambda"]
-        else:
-            self.MostRecentDataDict["Kp"] = self.Kp
-            self.MostRecentDataDict["Ki"] = self.Ki
-            self.MostRecentDataDict["Kd"] = self.Kd
-            self.MostRecentDataDict["ErrorSumMax"] = self.ErrorSumMax
-            self.MostRecentDataDict["ActualValueDot_ExponentialFilterLambda"] = self.ActualValueDot_ExponentialFilterLambda
-        #########################
+            self.Kp = EntryListWithBlinking_MostRecentDataDict_LocalCopy["Kp"]
+            self.Ki = EntryListWithBlinking_MostRecentDataDict_LocalCopy["Ki"]
+            self.Kd = EntryListWithBlinking_MostRecentDataDict_LocalCopy["Kd"]
+            self.ErrorSumMax = EntryListWithBlinking_MostRecentDataDict_LocalCopy["ErrorSumMax"]
+            self.ActualValueDot_ExponentialFilterLambda = EntryListWithBlinking_MostRecentDataDict_LocalCopy["ActualValueDot_ExponentialFilterLambda"]
+        #########################################################
 
-        #########################
-        self.Error = self.DesiredValue - self.ActualValue
-        #########################
+        #########################################################
+        #########################################################
+        for Index in range(0, self.NumberOfVariablesToTrack):
 
-        #########################
-        if abs(self.ErrorSum + self.Error) <= self.ErrorSumMax:
-            self.ErrorSum = self.ErrorSum + self.Error
-        #########################
+            #########################################################
+            self.Error[Index] = self.DesiredValue[Index] - self.ActualValue[Index]
+            #########################################################
 
-        #########################
+            #########################################################
+            if abs(self.ErrorSum[Index] + self.Error[Index]) <= self.ErrorSumMax:
+                self.ErrorSum[Index] = self.ErrorSum[Index] + self.Error[Index]
+            #########################################################
 
-        ############
-        if ActualValueDot == -11111.0: #No input
-            if self.DataStreamingDeltaT_CalculatedFromUpdateFunction > 0.0:
-                self.ActualValueDot_Raw = (self.ActualValue - self.ActualValue_last)/self.DataStreamingDeltaT_CalculatedFromUpdateFunction
-        else:
-            self.ActualValueDot_Raw = ActualValueDot
-            print("UpdatePIDloopError, ERROR: DataStreamingDeltaT_CalculatedFromUpdateFunction = 0!" )
-        ############
+            #########################################################
 
-        self.ActualValueDot_Filtered = self.ActualValueDot_LowPassFilter_ReubenPython2and3ClassObject.AddDataPointFromExternalProgram(self.ActualValueDot_Raw)["SignalOutSmoothed"]
+            ###########################
+            if ActualValueDot[Index] == -11111.0: #No input
+                if self.DataStreamingDeltaT_CalculatedFromUpdateFunction > 0.0:
+                    self.ActualValueDot_Raw[Index] = (self.ActualValue[Index] - self.ActualValue_last[Index])/self.DataStreamingDeltaT_CalculatedFromUpdateFunction
+                else:
+                    print("UpdatePIDloopError, ERROR: DataStreamingDeltaT_CalculatedFromUpdateFunction = 0")
+            else:
+                self.ActualValueDot_Raw[Index] = ActualValueDot[Index]
+            ###########################
 
-        self.ErrorDot = self.DesiredValueDot - self.ActualValueDot_Filtered
-        #########################
+            self.ActualValueDot_Filtered[Index] = self.ActualValueDot_LowPassFilter_ReubenPython2and3ClassObject[Index].AddDataPointFromExternalProgram(self.ActualValueDot_Raw[Index])["SignalOutSmoothed"]
 
-        #########################
-        self.CorrectiveCommandToIssue = self.Error*self.Kp + \
-                                   self.ErrorSum*self.Ki + \
-                                   self.ErrorDot*self.Kd
-        #########################
+            self.ErrorDot[Index] = self.DesiredValueDot[Index] - self.ActualValueDot_Filtered[Index]
+            #########################################################
 
-        #########################
-        self.MostRecentDataDict["LoopFrequencyHz"] = self.DataStreamingFrequency_CalculatedFromUpdateFunction
-        self.MostRecentDataDict["ActualValue"] = self.ActualValue
-        self.MostRecentDataDict["DesiredValue"] = self.DesiredValue
-        self.MostRecentDataDict["ActualValueDot_Raw"] = self.ActualValueDot_Raw
-        self.MostRecentDataDict["ActualValueDot_Filtered"] = self.ActualValueDot_Filtered
-        self.MostRecentDataDict["DesiredValueDot"] = self.DesiredValueDot
-        self.MostRecentDataDict["Error"] = self.Error
-        self.MostRecentDataDict["ErrorSum"] = self.ErrorSum
-        self.MostRecentDataDict["ErrorDot"] = self.ErrorDot
-        self.MostRecentDataDict["CorrectiveCommandToIssue"] = self.CorrectiveCommandToIssue
-        #########################
+            #########################################################
+            self.CorrectiveCommandToIssue[Index] = self.Error[Index]*self.Kp + \
+                                       self.ErrorSum[Index]*self.Ki + \
+                                       self.ErrorDot[Index]*self.Kd
+            #########################################################
+
+        #########################################################
+        #########################################################
 
         #########################
-        self.ActualValue_last = self.ActualValue
+        self.MostRecentDataDict = dict([("DataUpdateNumber", self.DataUpdateNumber),
+                                        ("Kp", self.Kp),
+                                        ("Ki", self.Ki),
+                                        ("Kd", self.Kd),
+                                        ("ErrorSumMax", self.ErrorSumMax),
+                                        ("ActualValueDot_ExponentialFilterLambda", self.ActualValueDot_ExponentialFilterLambda),
+                                        ("LoopFrequencyHz", self.DataStreamingFrequency_CalculatedFromUpdateFunction),
+                                        ("ActualValue", self.ActualValue),
+                                        ("DesiredValue", self.DesiredValue),
+                                        ("ActualValueDot_Raw", self.ActualValueDot_Raw),
+                                        ("ActualValueDot_Filtered", self.ActualValueDot_Filtered),
+                                        ("DesiredValueDot", self.DesiredValueDot),
+                                        ("Error", self.Error),
+                                        ("ErrorSum", self.ErrorSum),
+                                        ("ErrorDot", self.ErrorDot),
+                                        ("CorrectiveCommandToIssue", self.CorrectiveCommandToIssue)])
+        #########################
+
+        #########################
+        self.ActualValue_last = list(self.ActualValue)
         #########################
 
         return self.CorrectiveCommandToIssue
-
     ##########################################################################################################
     ##########################################################################################################
 
@@ -588,7 +677,8 @@ class PIDcontroller_ReubenPython2and3Class(Frame): #Subclass the Tkinter Frame
 
         if self.EXIT_PROGRAM_FLAG == 0:
 
-            return self.MostRecentDataDict
+            #deepcopy IS required as MostRecentDataDict sometimes contains lists (e.g. self.MostRecentDataDict["DesiredValue"] can be a list).
+            return deepcopy(self.MostRecentDataDict)
 
         else:
             return dict() #So that we're not returning variables during the close-down process.
@@ -698,7 +788,7 @@ class PIDcontroller_ReubenPython2and3Class(Frame): #Subclass the Tkinter Frame
         #################################################
 
         ################################################# INITIALIZE VARIABLES
-        self.UpdatePIDloopError(0.0, 0.0, ActualValueDot=0.0, DesiredValueDot=0.0)
+        self.UpdatePIDloopError([0.0]*self.NumberOfVariablesToTrack, [0.0]*self.NumberOfVariablesToTrack, ActualValueDot=[0.0]*self.NumberOfVariablesToTrack, DesiredValueDot=[0.0]*self.NumberOfVariablesToTrack)
         #################################################
 
     ##########################################################################################################
@@ -729,10 +819,7 @@ class PIDcontroller_ReubenPython2and3Class(Frame): #Subclass the Tkinter Frame
                     #######################################################
 
                     #######################################################
-                    Data_Label_TextToDisplay = ""
-                    for Key in self.MostRecentDataDict:
-                        Data_Label_TextToDisplay = Data_Label_TextToDisplay + Key + ": " + self.ConvertFloatToStringWithNumberOfLeadingNumbersAndDecimalPlaces_NumberOrListInput(self.MostRecentDataDict[Key], 0, 5) + "\n"
-
+                    Data_Label_TextToDisplay = self.ConvertDictToProperlyFormattedStringForPrinting(self.MostRecentDataDict, NumberOfDecimalsPlaceToUse = 3, NumberOfEntriesPerLine = 1, NumberOfTabsBetweenItems = 3)
                     self.Data_Label["text"] = Data_Label_TextToDisplay
                     #######################################################
 
@@ -801,73 +888,6 @@ class PIDcontroller_ReubenPython2and3Class(Frame): #Subclass the Tkinter Frame
 
     ##########################################################################################################
     ##########################################################################################################
-    def IsInputList(self, InputToCheck):
-
-        result = isinstance(InputToCheck, list)
-        return result
-    ##########################################################################################################
-    ##########################################################################################################
-
-    ##########################################################################################################
-    ##########################################################################################################
-    def ConvertDictToProperlyFormattedStringForPrinting(self, DictToPrint, NumberOfDecimalsPlaceToUse = 3):
-
-        ProperlyFormattedStringForPrinting = ""
-        Key_counter = 0
-        for Key in DictToPrint:
-            ProperlyFormattedStringForPrinting = ProperlyFormattedStringForPrinting + \
-                                                 Key + ": " + \
-                                                 self.ConvertFloatToStringWithNumberOfLeadingNumbersAndDecimalPlaces_NumberOrListInput(DictToPrint[Key], 0, NumberOfDecimalsPlaceToUse)
-            if Key_counter < len(DictToPrint) - 1:
-                ProperlyFormattedStringForPrinting = ProperlyFormattedStringForPrinting + "\n"
-
-        return ProperlyFormattedStringForPrinting
-    ##########################################################################################################
-    ##########################################################################################################
-
-    ##########################################################################################################
-    ##########################################################################################################
-    def ConvertFloatToStringWithNumberOfLeadingNumbersAndDecimalPlaces_NumberOrListInput(self, input, number_of_leading_numbers=4, number_of_decimal_places=3):
-        IsListFlag = self.IsInputList(input)
-
-        if IsListFlag == 0:
-            float_number_list = [input]
-        else:
-            float_number_list = list(input)
-
-        float_number_list_as_strings = []
-        for element in float_number_list:
-            try:
-                element = float(element)
-                prefix_string = "{:." + str(number_of_decimal_places) + "f}"
-                element_as_string = prefix_string.format(element)
-                float_number_list_as_strings.append(element_as_string)
-            except:
-                self.MyPrint_WithoutLogFile(self.TellWhichFileWereIn() + ": ConvertFloatToStringWithNumberOfLeadingNumbersAndDecimalPlaces_NumberOrListInput ERROR: " + str(element) + " cannot be turned into a float")
-                return -1
-
-        StringToReturn = ""
-        if IsListFlag == 0:
-            StringToReturn = float_number_list_as_strings[0].zfill(number_of_leading_numbers + number_of_decimal_places + 1 + 1)  # +1 for sign, +1 for decimal place
-        else:
-            StringToReturn = "["
-            for index, StringElement in enumerate(float_number_list_as_strings):
-                if float_number_list[index] >= 0:
-                    StringElement = "+" + StringElement  # So that our strings always have either + or - signs to maintain the same string length
-
-                StringElement = StringElement.zfill(number_of_leading_numbers + number_of_decimal_places + 1 + 1)  # +1 for sign, +1 for decimal place
-
-                if index != len(float_number_list_as_strings) - 1:
-                    StringToReturn = StringToReturn + StringElement + ", "
-                else:
-                    StringToReturn = StringToReturn + StringElement + "]"
-
-        return StringToReturn
-    ##########################################################################################################
-    ##########################################################################################################
-
-    ##########################################################################################################
-    ##########################################################################################################
     def MyPrint_WithoutLogFile(self, input_string):
 
         input_string = str(input_string)
@@ -897,3 +917,209 @@ class PIDcontroller_ReubenPython2and3Class(Frame): #Subclass the Tkinter Frame
 
     ##########################################################################################################
     ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    def IsInputList(self, InputToCheck):
+
+        result = isinstance(InputToCheck, list)
+        return result
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    def ConvertFloatToStringWithNumberOfLeadingNumbersAndDecimalPlaces_NumberOrListInput(self, input, number_of_leading_numbers = 4, number_of_decimal_places = 3):
+
+        number_of_decimal_places = max(1, number_of_decimal_places) #Make sure we're above 1
+
+        ListOfStringsToJoin = []
+
+        ##########################################################################################################
+        ##########################################################################################################
+        ##########################################################################################################
+        if isinstance(input, str) == 1:
+            ListOfStringsToJoin.append(input)
+        ##########################################################################################################
+        ##########################################################################################################
+        ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+        ##########################################################################################################
+        elif isinstance(input, int) == 1 or isinstance(input, float) == 1:
+            element = float(input)
+            prefix_string = "{:." + str(number_of_decimal_places) + "f}"
+            element_as_string = prefix_string.format(element)
+
+            ##########################################################################################################
+            ##########################################################################################################
+            if element >= 0:
+                element_as_string = element_as_string.zfill(number_of_leading_numbers + number_of_decimal_places + 1 + 1)  # +1 for sign, +1 for decimal place
+                element_as_string = "+" + element_as_string  # So that our strings always have either + or - signs to maintain the same string length
+            else:
+                element_as_string = element_as_string.zfill(number_of_leading_numbers + number_of_decimal_places + 1 + 1 + 1)  # +1 for sign, +1 for decimal place
+            ##########################################################################################################
+            ##########################################################################################################
+
+            ListOfStringsToJoin.append(element_as_string)
+        ##########################################################################################################
+        ##########################################################################################################
+        ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+        ##########################################################################################################
+        elif isinstance(input, list) == 1:
+
+            if len(input) > 0:
+                for element in input: #RECURSION
+                    ListOfStringsToJoin.append(self.ConvertFloatToStringWithNumberOfLeadingNumbersAndDecimalPlaces_NumberOrListInput(element, number_of_leading_numbers, number_of_decimal_places))
+
+            else: #Situation when we get a list() or []
+                ListOfStringsToJoin.append(str(input))
+
+        ##########################################################################################################
+        ##########################################################################################################
+        ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+        ##########################################################################################################
+        elif isinstance(input, tuple) == 1:
+
+            if len(input) > 0:
+                for element in input: #RECURSION
+                    ListOfStringsToJoin.append("TUPLE" + self.ConvertFloatToStringWithNumberOfLeadingNumbersAndDecimalPlaces_NumberOrListInput(element, number_of_leading_numbers, number_of_decimal_places))
+
+            else: #Situation when we get a list() or []
+                ListOfStringsToJoin.append(str(input))
+
+        ##########################################################################################################
+        ##########################################################################################################
+        ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+        ##########################################################################################################
+        elif isinstance(input, dict) == 1:
+
+            if len(input) > 0:
+                for Key in input: #RECURSION
+                    ListOfStringsToJoin.append(str(Key) + ": " + self.ConvertFloatToStringWithNumberOfLeadingNumbersAndDecimalPlaces_NumberOrListInput(input[Key], number_of_leading_numbers, number_of_decimal_places))
+
+            else: #Situation when we get a dict()
+                ListOfStringsToJoin.append(str(input))
+
+        ##########################################################################################################
+        ##########################################################################################################
+        ##########################################################################################################
+        else:
+            ListOfStringsToJoin.append(str(input))
+        ##########################################################################################################
+        ##########################################################################################################
+        ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+        ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+        ##########################################################################################################
+        if len(ListOfStringsToJoin) > 1:
+
+            ##########################################################################################################
+            ##########################################################################################################
+
+            ##########################################################################################################
+            StringToReturn = ""
+            for Index, StringToProcess in enumerate(ListOfStringsToJoin):
+
+                ################################################
+                if Index == 0: #The first element
+                    if StringToProcess.find(":") != -1 and StringToProcess[0] != "{": #meaning that we're processing a dict()
+                        StringToReturn = "{"
+                    elif StringToProcess.find("TUPLE") != -1 and StringToProcess[0] != "(":  # meaning that we're processing a tuple
+                        StringToReturn = "("
+                    else:
+                        StringToReturn = "["
+
+                    StringToReturn = StringToReturn + StringToProcess.replace("TUPLE","") + ", "
+                ################################################
+
+                ################################################
+                elif Index < len(ListOfStringsToJoin) - 1: #The middle elements
+                    StringToReturn = StringToReturn + StringToProcess + ", "
+                ################################################
+
+                ################################################
+                else: #The last element
+                    StringToReturn = StringToReturn + StringToProcess
+
+                    if StringToProcess.find(":") != -1 and StringToProcess[-1] != "}":  # meaning that we're processing a dict()
+                        StringToReturn = StringToReturn + "}"
+                    elif StringToProcess.find("TUPLE") != -1 and StringToProcess[-1] != ")":  # meaning that we're processing a tuple
+                        StringToReturn = StringToReturn + ")"
+                    else:
+                        StringToReturn = StringToReturn + "]"
+
+                ################################################
+
+            ##########################################################################################################
+
+            ##########################################################################################################
+            ##########################################################################################################
+
+        elif len(ListOfStringsToJoin) == 1:
+            StringToReturn = ListOfStringsToJoin[0]
+
+        else:
+            StringToReturn = ListOfStringsToJoin
+
+        return StringToReturn
+        ##########################################################################################################
+        ##########################################################################################################
+        ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    def ConvertDictToProperlyFormattedStringForPrinting(self, DictToPrint, NumberOfDecimalsPlaceToUse = 3, NumberOfEntriesPerLine = 1, NumberOfTabsBetweenItems = 3):
+
+        ProperlyFormattedStringForPrinting = ""
+        ItemsPerLineCounter = 0
+
+        for Key in DictToPrint:
+
+            ##########################################################################################################
+            if isinstance(DictToPrint[Key], dict): #RECURSION
+                ProperlyFormattedStringForPrinting = ProperlyFormattedStringForPrinting + \
+                                                     Key + ":\n" + \
+                                                     self.ConvertDictToProperlyFormattedStringForPrinting(DictToPrint[Key], NumberOfDecimalsPlaceToUse, NumberOfEntriesPerLine, NumberOfTabsBetweenItems)
+
+            else:
+                ProperlyFormattedStringForPrinting = ProperlyFormattedStringForPrinting + \
+                                                     Key + ": " + \
+                                                     self.ConvertFloatToStringWithNumberOfLeadingNumbersAndDecimalPlaces_NumberOrListInput(DictToPrint[Key], 0, NumberOfDecimalsPlaceToUse)
+            ##########################################################################################################
+
+            ##########################################################################################################
+            if ItemsPerLineCounter < NumberOfEntriesPerLine - 1:
+                ProperlyFormattedStringForPrinting = ProperlyFormattedStringForPrinting + "\t"*NumberOfTabsBetweenItems
+                ItemsPerLineCounter = ItemsPerLineCounter + 1
+            else:
+                ProperlyFormattedStringForPrinting = ProperlyFormattedStringForPrinting + "\n"
+                ItemsPerLineCounter = 0
+            ##########################################################################################################
+
+        return ProperlyFormattedStringForPrinting
+    ##########################################################################################################
+    ##########################################################################################################
+

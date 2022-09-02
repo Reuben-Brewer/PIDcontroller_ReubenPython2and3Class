@@ -2,7 +2,7 @@
 
 PIDcontroller_ReubenPython2and3Class
 
-Wrapper (including ability to hook to Tkinter GUI) to implement and tune gains of PID controller.
+Code (including ability to hook to Tkinter GUI) to implement and tune gains of PID controller.
 
 Reuben Brewer, Ph.D.
 
@@ -12,7 +12,7 @@ www.reubotics.com
 
 Apache 2 License
 
-Software Revision D, 07/18/2022
+Software Revision E, 08/29/2022
 
 Verified working on: 
 Python 2.7, 3.8.
@@ -25,7 +25,7 @@ Raspberry Pi Buster
 ########################### Python module installation instructions, all OS's
 
 PIDcontroller_ReubenPython2and3Class, ListOfModuleDependencies: ['EntryListWithBlinking_ReubenPython2and3Class', 'future.builtins', 'LowPassFilter_ReubenPython2and3Class']
-PIDcontroller_ReubenPython2and3Class, ListOfModuleDependencies_TestProgram: ['future.builtins', 'MyPrint_ReubenPython2and3Class']
+PIDcontroller_ReubenPython2and3Class, ListOfModuleDependencies_TestProgram: ['MyPrint_ReubenPython2and3Class']
 PIDcontroller_ReubenPython2and3Class, ListOfModuleDependencies_NestedLayers: ['future.builtins', 'numpy']
 PIDcontroller_ReubenPython2and3Class, ListOfModuleDependencies_All: ['EntryListWithBlinking_ReubenPython2and3Class', 'future.builtins', 'LowPassFilter_ReubenPython2and3Class', 'MyPrint_ReubenPython2and3Class', 'numpy']
 
