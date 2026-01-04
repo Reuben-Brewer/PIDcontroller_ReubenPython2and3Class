@@ -6,16 +6,24 @@ reuben.brewer@gmail.com
 www.reubotics.com
 
 Apache 2 License
-Software Revision F, 09/21/2022
+Software Revision G, 12/30/2025
 
-Verified working on: Python 2.7, 3.8 for Windows 8.1, 10 64-bit and Raspberry Pi Buster (no Mac testing yet).
+Verified working on: Python 3.12/13 for Windows 10/11 64-bit and Raspberry Pi Bookworm (no Mac testing yet).
 '''
 
 __author__ = 'reuben.brewer'
 
+##########################################################################################################
+##########################################################################################################
+
 #########################################################
-from LowPassFilter_ReubenPython2and3Class import *
+import ReubenGithubCodeModulePaths #Replaces the need to have "ReubenGithubCodeModulePaths.pth" within "C:\Anaconda3\Lib\site-packages".
+ReubenGithubCodeModulePaths.Enable()
+#########################################################
+
+#########################################################
 from EntryListWithBlinking_ReubenPython2and3Class import *
+from LowPassFilter_ReubenPython2and3Class import *
 #########################################################
 
 #########################################################
@@ -29,33 +37,15 @@ import collections
 from copy import * #for deepcopy(dict)
 import inspect #To enable 'TellWhichFileWereIn'
 import threading
+import queue as Queue
 import traceback
 #########################################################
 
 #########################################################
-if sys.version_info[0] < 3:
-    from Tkinter import * #Python 2
-    import tkFont
-    import ttk
-else:
-    from tkinter import * #Python 3
-    import tkinter.font as tkFont #Python 3
-    from tkinter import ttk
+from tkinter import *
+import tkinter.font as tkFont
+from tkinter import ttk
 #########################################################
-
-#########################################################
-if sys.version_info[0] < 3:
-    import Queue  # Python 2
-else:
-    import queue as Queue  # Python 3
-#########################################################
-
-#########################################################
-if sys.version_info[0] < 3:
-    from builtins import raw_input as input
-else:
-    from future.builtins import input as input
-######################################################### #"sudo pip3 install future" (Python 3) AND "sudo pip install future" (Python 2)
 
 #########################################################
 import platform
@@ -65,11 +55,14 @@ if platform.system() == "Windows":
     winmm.timeBeginPeriod(1) #Set minimum timer resolution to 1ms so that time.sleep(0.001) behaves properly.
 #########################################################
 
+##########################################################################################################
+##########################################################################################################
+
 class PIDcontroller_ReubenPython2and3Class(Frame): #Subclass the Tkinter Frame
 
     ##########################################################################################################
     ##########################################################################################################
-    def __init__(self, setup_dict): #Subclass the Tkinter Frame
+    def __init__(self, SetupDict): #Subclass the Tkinter Frame
 
         print("#################### PIDcontroller_ReubenPython2and3Class __init__ starting. ####################")
 
@@ -114,8 +107,8 @@ class PIDcontroller_ReubenPython2and3Class(Frame): #Subclass the Tkinter Frame
 
         #########################################################
         #########################################################
-        if "GUIparametersDict" in setup_dict:
-            self.GUIparametersDict = setup_dict["GUIparametersDict"]
+        if "GUIparametersDict" in SetupDict:
+            self.GUIparametersDict = SetupDict["GUIparametersDict"]
 
             #########################################################
             #########################################################
@@ -125,16 +118,6 @@ class PIDcontroller_ReubenPython2and3Class(Frame): #Subclass the Tkinter Frame
                 self.USE_GUI_FLAG = 0
 
             print("PIDcontroller_ReubenPython2and3Class __init__: USE_GUI_FLAG: " + str(self.USE_GUI_FLAG))
-            #########################################################
-            #########################################################
-
-            #########################################################
-            #########################################################
-            if "root" in self.GUIparametersDict:
-                self.root = self.GUIparametersDict["root"]
-            else:
-                print("PIDcontroller_ReubenPython2and3Class __init__: ERROR, must pass in 'root'")
-                return
             #########################################################
             #########################################################
 
@@ -270,8 +253,8 @@ class PIDcontroller_ReubenPython2and3Class(Frame): #Subclass the Tkinter Frame
 
         #########################################################
         #########################################################
-        if "NameToDisplay_UserSet" in setup_dict:
-            self.NameToDisplay_UserSet = str(setup_dict["NameToDisplay_UserSet"])
+        if "NameToDisplay_UserSet" in SetupDict:
+            self.NameToDisplay_UserSet = str(SetupDict["NameToDisplay_UserSet"])
         else:
             self.NameToDisplay_UserSet = ""
 
@@ -281,8 +264,8 @@ class PIDcontroller_ReubenPython2and3Class(Frame): #Subclass the Tkinter Frame
 
         #########################################################
         #########################################################
-        if "NumberOfVariablesToTrack" in setup_dict:
-            self.NumberOfVariablesToTrack = int(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("NumberOfVariablesToTrack", setup_dict["NumberOfVariablesToTrack"], 1, 10))
+        if "NumberOfVariablesToTrack" in SetupDict:
+            self.NumberOfVariablesToTrack = int(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("NumberOfVariablesToTrack", SetupDict["NumberOfVariablesToTrack"], 1, 10))
 
         else:
             self.NumberOfVariablesToTrack = 1
@@ -293,8 +276,8 @@ class PIDcontroller_ReubenPython2and3Class(Frame): #Subclass the Tkinter Frame
 
         #########################################################
         #########################################################
-        if "Kp" in setup_dict:
-            self.Kp = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("Kp", setup_dict["Kp"], -sys.float_info.max, sys.float_info.max)
+        if "Kp" in SetupDict:
+            self.Kp = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("Kp", SetupDict["Kp"], -sys.float_info.max, sys.float_info.max)
 
         else:
             self.Kp = 0.0
@@ -305,8 +288,8 @@ class PIDcontroller_ReubenPython2and3Class(Frame): #Subclass the Tkinter Frame
 
         #########################################################
         #########################################################
-        if "Ki" in setup_dict:
-            self.Ki = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("Ki", setup_dict["Ki"], -sys.float_info.max, sys.float_info.max)
+        if "Ki" in SetupDict:
+            self.Ki = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("Ki", SetupDict["Ki"], -sys.float_info.max, sys.float_info.max)
 
         else:
             self.Ki = 0.0
@@ -317,8 +300,8 @@ class PIDcontroller_ReubenPython2and3Class(Frame): #Subclass the Tkinter Frame
         
         #########################################################
         #########################################################
-        if "Kd" in setup_dict:
-            self.Kd = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("Kd", setup_dict["Kd"], -sys.float_info.max, sys.float_info.max)
+        if "Kd" in SetupDict:
+            self.Kd = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("Kd", SetupDict["Kd"], -sys.float_info.max, sys.float_info.max)
 
         else:
             self.Kd = 0.0
@@ -329,8 +312,8 @@ class PIDcontroller_ReubenPython2and3Class(Frame): #Subclass the Tkinter Frame
         
         #########################################################
         #########################################################
-        if "ErrorSumMax" in setup_dict:
-            self.ErrorSumMax = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("ErrorSumMax", setup_dict["ErrorSumMax"], -sys.float_info.max, sys.float_info.max)
+        if "ErrorSumMax" in SetupDict:
+            self.ErrorSumMax = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("ErrorSumMax", SetupDict["ErrorSumMax"], -sys.float_info.max, sys.float_info.max)
 
         else:
             self.ErrorSumMax = 0.0
@@ -341,8 +324,8 @@ class PIDcontroller_ReubenPython2and3Class(Frame): #Subclass the Tkinter Frame
 
         #########################################################
         #########################################################
-        if "ActualValueDot_ExponentialFilterLambda" in setup_dict:
-            self.ActualValueDot_ExponentialFilterLambda = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("ActualValueDot_ExponentialFilterLambda", setup_dict["ActualValueDot_ExponentialFilterLambda"], -sys.float_info.max, sys.float_info.max)
+        if "ActualValueDot_ExponentialFilterLambda" in SetupDict:
+            self.ActualValueDot_ExponentialFilterLambda = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("ActualValueDot_ExponentialFilterLambda", SetupDict["ActualValueDot_ExponentialFilterLambda"], -sys.float_info.max, sys.float_info.max)
 
         else:
             self.ActualValueDot_ExponentialFilterLambda = 1.0 #Default to no filtering, new_filtered_value = k * raw_sensor_value + (1 - k) * old_filtered_value
@@ -353,11 +336,11 @@ class PIDcontroller_ReubenPython2and3Class(Frame): #Subclass the Tkinter Frame
 
         #########################################################
         #########################################################
-        self.ActualValueDot_LowPassFilter_ReubenPython2and3ClassObject = list()
+        self.ActualValueDot_LowPassFilter_Object = list()
         for index in range(0, self.NumberOfVariablesToTrack):
-            self.ActualValueDot_LowPassFilter_ReubenPython2and3ClassObject.append(LowPassFilter_ReubenPython2and3Class(dict([("UseMedianFilterFlag", 0),
-                                                        ("UseExponentialSmoothingFilterFlag", 1),
-                                                        ("ExponentialSmoothingFilterLambda", self.ActualValueDot_ExponentialFilterLambda)])))
+            self.ActualValueDot_LowPassFilter_Object.append(LowPassFilter_ReubenPython2and3Class(dict([("UseMedianFilterFlag", 0),
+                                                                                                        ("UseExponentialSmoothingFilterFlag", 1),
+                                                                                                        ("ExponentialSmoothingFilterLambda", self.ActualValueDot_ExponentialFilterLambda)])))
         #########################################################
         #########################################################
 
@@ -388,19 +371,6 @@ class PIDcontroller_ReubenPython2and3Class(Frame): #Subclass the Tkinter Frame
 
         #########################################################
         #########################################################
-        if self.USE_GUI_FLAG == 1:
-            self.StartGUI(self.root)
-        #########################################################
-        #########################################################
-
-        #########################################################
-        #########################################################
-        time.sleep(0.5)
-        #########################################################
-        #########################################################
-
-        #########################################################
-        #########################################################
         self.OBJECT_CREATED_SUCCESSFULLY_FLAG = 1
         #########################################################
         #########################################################
@@ -410,72 +380,200 @@ class PIDcontroller_ReubenPython2and3Class(Frame): #Subclass the Tkinter Frame
 
     ##########################################################################################################
     ##########################################################################################################
-    def __del__(self):
-        pass
+    def LimitNumber_IntOutputOnly(self, min_val, max_val, test_val):
+        if test_val > max_val:
+            test_val = max_val
+
+        elif test_val < min_val:
+            test_val = min_val
+
+        else:
+            test_val = test_val
+
+        test_val = int(test_val)
+
+        return test_val
     ##########################################################################################################
     ##########################################################################################################
 
     ##########################################################################################################
     ##########################################################################################################
-    def PassThrough0and1values_ExitProgramOtherwise(self, InputNameString, InputNumber):
+    def LimitNumber_FloatOutputOnly(self, min_val, max_val, test_val):
+        if test_val > max_val:
+            test_val = max_val
 
+        elif test_val < min_val:
+            test_val = min_val
+
+        else:
+            test_val = test_val
+
+        test_val = float(test_val)
+
+        return test_val
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    def PassThrough0and1values_ExitProgramOtherwise(self, InputNameString, InputNumber, ExitProgramIfFailureFlag=1):
+
+        ##########################################################################################################
+        ##########################################################################################################
         try:
+
+            ##########################################################################################################
             InputNumber_ConvertedToFloat = float(InputNumber)
+            ##########################################################################################################
+
         except:
+
+            ##########################################################################################################
             exceptions = sys.exc_info()[0]
-            print("PassThrough0and1values_ExitProgramOtherwise Error. InputNumber must be a float value, Exceptions: %s" % exceptions)
-            input("Press any key to continue")
-            sys.exit()
+            print("PassThrough0and1values_ExitProgramOtherwise Error. InputNumber must be a numerical value, Exceptions: %s" % exceptions)
 
-        try:
-            if InputNumber_ConvertedToFloat == 0.0 or InputNumber_ConvertedToFloat == 1:
-                return InputNumber_ConvertedToFloat
-            else:
-                input("PassThrough0and1values_ExitProgramOtherwise Error. '" +
-                          InputNameString +
-                          "' must be 0 or 1 (value was " +
-                          str(InputNumber_ConvertedToFloat) +
-                          "). Press any key (and enter) to exit.")
-
+            ##########################
+            if ExitProgramIfFailureFlag == 1:
                 sys.exit()
+            else:
+                return -1
+            ##########################
+
+            ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+        try:
+
+            ##########################################################################################################
+            if InputNumber_ConvertedToFloat == 0.0 or InputNumber_ConvertedToFloat == 1.0:
+                return InputNumber_ConvertedToFloat
+
+            else:
+
+                print("PassThrough0and1values_ExitProgramOtherwise Error. '" +
+                      str(InputNameString) +
+                      "' must be 0 or 1 (value was " +
+                      str(InputNumber_ConvertedToFloat) +
+                      ").")
+
+                ##########################
+                if ExitProgramIfFailureFlag == 1:
+                    sys.exit()
+
+                else:
+                    return -1
+                ##########################
+
+            ##########################################################################################################
+
         except:
+
+            ##########################################################################################################
             exceptions = sys.exc_info()[0]
             print("PassThrough0and1values_ExitProgramOtherwise Error, Exceptions: %s" % exceptions)
-            input("Press any key to continue")
-            sys.exit()
+
+            ##########################
+            if ExitProgramIfFailureFlag == 1:
+                sys.exit()
+            else:
+                return -1
+            ##########################
+
+            ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
     ##########################################################################################################
     ##########################################################################################################
 
     ##########################################################################################################
     ##########################################################################################################
-    def PassThroughFloatValuesInRange_ExitProgramOtherwise(self, InputNameString, InputNumber, RangeMinValue, RangeMaxValue):
+    ##########################################################################################################
+    ##########################################################################################################
+    def PassThroughFloatValuesInRange_ExitProgramOtherwise(self, InputNameString, InputNumber, RangeMinValue, RangeMaxValue, ExitProgramIfFailureFlag=1):
+
+        ##########################################################################################################
+        ##########################################################################################################
         try:
+            ##########################################################################################################
             InputNumber_ConvertedToFloat = float(InputNumber)
+            ##########################################################################################################
+
         except:
+            ##########################################################################################################
             exceptions = sys.exc_info()[0]
             print("PassThroughFloatValuesInRange_ExitProgramOtherwise Error. InputNumber must be a float value, Exceptions: %s" % exceptions)
-            input("Press any key to continue")
-            sys.exit()
+            traceback.print_exc()
 
-        try:
-            if InputNumber_ConvertedToFloat >= RangeMinValue and InputNumber_ConvertedToFloat <= RangeMaxValue:
-                return InputNumber_ConvertedToFloat
-            else:
-                input("PassThroughFloatValuesInRange_ExitProgramOtherwise Error. '" +
-                          InputNameString +
-                          "' must be in the range [" +
-                          str(RangeMinValue) +
-                          ", " +
-                          str(RangeMaxValue) +
-                          "] (value was " +
-                          str(InputNumber_ConvertedToFloat) + "). Press any key (and enter) to exit.")
-
+            ##########################
+            if ExitProgramIfFailureFlag == 1:
                 sys.exit()
+            else:
+                return -11111.0
+            ##########################
+
+            ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+        try:
+
+            ##########################################################################################################
+            InputNumber_ConvertedToFloat_Limited = self.LimitNumber_FloatOutputOnly(RangeMinValue, RangeMaxValue, InputNumber_ConvertedToFloat)
+
+            if InputNumber_ConvertedToFloat_Limited != InputNumber_ConvertedToFloat:
+                print("PassThroughFloatValuesInRange_ExitProgramOtherwise Error. '" +
+                      str(InputNameString) +
+                      "' must be in the range [" +
+                      str(RangeMinValue) +
+                      ", " +
+                      str(RangeMaxValue) +
+                      "] (value was " +
+                      str(InputNumber_ConvertedToFloat) + ")")
+
+                ##########################
+                if ExitProgramIfFailureFlag == 1:
+                    sys.exit()
+                else:
+                    return -11111.0
+                ##########################
+
+            else:
+                return InputNumber_ConvertedToFloat_Limited
+            ##########################################################################################################
+
         except:
+            ##########################################################################################################
             exceptions = sys.exc_info()[0]
             print("PassThroughFloatValuesInRange_ExitProgramOtherwise Error, Exceptions: %s" % exceptions)
-            input("Press any key to continue")
-            sys.exit()
+            traceback.print_exc()
+
+            ##########################
+            if ExitProgramIfFailureFlag == 1:
+                sys.exit()
+            else:
+                return -11111.0
+            ##########################
+
+            ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
     ##########################################################################################################
     ##########################################################################################################
 
@@ -526,7 +624,7 @@ class PIDcontroller_ReubenPython2and3Class(Frame): #Subclass the Tkinter Frame
     ##########################################################################################################
     def UpdatePIDloopError(self, ActualValue, DesiredValue, ActualValueDot = -11111.0, DesiredValueDot = -11111.0):
 
-        # print("UpdatePIDloopError event fired!")
+        #print("UpdatePIDloopError event fired!")
 
         #########################################################
         if self.IsInputList(ActualValue) == 0:
@@ -596,13 +694,18 @@ class PIDcontroller_ReubenPython2and3Class(Frame): #Subclass the Tkinter Frame
 
         #########################################################
         if self.USE_GUI_FLAG == 1:
-            EntryListWithBlinking_MostRecentDataDict_LocalCopy = self.EntryListWithBlinking_ReubenPython2and3ClassObject.GetMostRecentDataDict() #Get latest gain values
 
-            self.Kp = EntryListWithBlinking_MostRecentDataDict_LocalCopy["Kp"]
-            self.Ki = EntryListWithBlinking_MostRecentDataDict_LocalCopy["Ki"]
-            self.Kd = EntryListWithBlinking_MostRecentDataDict_LocalCopy["Kd"]
-            self.ErrorSumMax = EntryListWithBlinking_MostRecentDataDict_LocalCopy["ErrorSumMax"]
-            self.ActualValueDot_ExponentialFilterLambda = EntryListWithBlinking_MostRecentDataDict_LocalCopy["ActualValueDot_ExponentialFilterLambda"]
+            try: #The try block allows our function to proceed whil the entry object is setup.
+                EntryListWithBlinking_MostRecentDataDict_LocalCopy = self.EntryListWithBlinking_Object.GetMostRecentDataDict() #Get latest gain values
+
+                self.Kp = EntryListWithBlinking_MostRecentDataDict_LocalCopy["Kp"]
+                self.Ki = EntryListWithBlinking_MostRecentDataDict_LocalCopy["Ki"]
+                self.Kd = EntryListWithBlinking_MostRecentDataDict_LocalCopy["Kd"]
+                self.ErrorSumMax = EntryListWithBlinking_MostRecentDataDict_LocalCopy["ErrorSumMax"]
+                self.ActualValueDot_ExponentialFilterLambda = EntryListWithBlinking_MostRecentDataDict_LocalCopy["ActualValueDot_ExponentialFilterLambda"]
+
+            except:
+                pass
         #########################################################
 
         #########################################################
@@ -630,15 +733,15 @@ class PIDcontroller_ReubenPython2and3Class(Frame): #Subclass the Tkinter Frame
                 self.ActualValueDot_Raw[Index] = ActualValueDot[Index]
             ###########################
 
-            self.ActualValueDot_Filtered[Index] = self.ActualValueDot_LowPassFilter_ReubenPython2and3ClassObject[Index].AddDataPointFromExternalProgram(self.ActualValueDot_Raw[Index])["SignalOutSmoothed"]
+            self.ActualValueDot_Filtered[Index] = self.ActualValueDot_LowPassFilter_Object[Index].AddDataPointFromExternalProgram(self.ActualValueDot_Raw[Index])["SignalOutSmoothed"]
 
             self.ErrorDot[Index] = self.DesiredValueDot[Index] - self.ActualValueDot_Filtered[Index]
             #########################################################
 
             #########################################################
             self.CorrectiveCommandToIssue[Index] = self.Error[Index]*self.Kp + \
-                                       self.ErrorSum[Index]*self.Ki + \
-                                       self.ErrorDot[Index]*self.Kd
+                                                   self.ErrorSum[Index]*self.Ki + \
+                                                   self.ErrorDot[Index]*self.Kd
             #########################################################
 
         #########################################################
@@ -698,25 +801,18 @@ class PIDcontroller_ReubenPython2and3Class(Frame): #Subclass the Tkinter Frame
 
     ##########################################################################################################
     ##########################################################################################################
-    def StartGUI(self, GuiParent):
+    def CreateGUIobjects(self, TkinterParent):
 
-        self.GUI_Thread_ThreadingObject = threading.Thread(target=self.GUI_Thread, args=(GuiParent,))
-        self.GUI_Thread_ThreadingObject.setDaemon(True) #Should mean that the GUI thread is destroyed automatically when the main thread is destroyed.
-        self.GUI_Thread_ThreadingObject.start()
-    ##########################################################################################################
-    ##########################################################################################################
-
-    ##########################################################################################################
-    ##########################################################################################################
-    def GUI_Thread(self, parent):
-
-        print("Starting the GUI_Thread for PIDcontroller_ReubenPython2and3Class object.")
+        print("PIDcontroller_ReubenPython2and3Class, CreateGUIobjects event fired.")
 
         #################################################
-        self.root = parent
-        self.parent = parent
+        #################################################
+        self.root = TkinterParent
+        self.parent = TkinterParent
+        #################################################
         #################################################
 
+        #################################################
         #################################################
         self.myFrame = Frame(self.root)
 
@@ -732,7 +828,9 @@ class PIDcontroller_ReubenPython2and3Class(Frame): #Subclass the Tkinter Frame
                           columnspan= self.GUI_COLUMNSPAN,
                           sticky = self.GUI_STICKY)
         #################################################
+        #################################################
 
+        #################################################
         #################################################
         self.TKinter_LightGreenColor = '#%02x%02x%02x' % (150, 255, 150) #RGB
         self.TKinter_LightRedColor = '#%02x%02x%02x' % (255, 150, 150) #RGB
@@ -742,14 +840,20 @@ class PIDcontroller_ReubenPython2and3Class(Frame): #Subclass the Tkinter Frame
         self.LabelWidth = 35
         self.FontSize = 12
         #################################################
+        #################################################
 
+        #################################################
         #################################################
         self.NameLabel = Label(self.myFrame, text=self.NameToDisplay_UserSet, width=50, font=("Helvetica", int(self.FontSize)))
         self.NameLabel.grid(row=0, column=0, padx=5, pady=1, columnspan=1, rowspan=1)
         #################################################
+        #################################################
 
         #################################################
-        self.EntryListWithBlinking_ReubenPython2and3ClassObject_GUIparametersDict = dict([("root", self.myFrame),("UseBorderAroundThisGuiObjectFlag", 0),("GUI_ROW", 1),("GUI_COLUMN", 0)])
+        #################################################
+        self.EntryListWithBlinking_GUIparametersDict = dict([("UseBorderAroundThisGuiObjectFlag", 0),
+                                                             ("GUI_ROW", 1),
+                                                             ("GUI_COLUMN", 0)])
         
         self.EntryListWithBlinking_Variables_ListOfDicts = [dict([("Name", "Kp"),("Type", "float"), ("StartingVal", self.Kp),("EntryWidth", self.EntryWidth),("LabelWidth", self.LabelWidth),("FontSize", self.FontSize)]),
                                                        dict([("Name", "Ki"),("Type", "float"), ("StartingVal", self.Ki),("EntryWidth", self.EntryWidth),("LabelWidth", self.LabelWidth),("FontSize", self.FontSize)]),
@@ -757,38 +861,56 @@ class PIDcontroller_ReubenPython2and3Class(Frame): #Subclass the Tkinter Frame
                                                        dict([("Name", "ErrorSumMax"),("Type", "float"), ("StartingVal", self.ErrorSumMax),("EntryWidth", self.EntryWidth),("LabelWidth", self.LabelWidth),("FontSize", self.FontSize)]),
                                                        dict([("Name", "ActualValueDot_ExponentialFilterLambda"),("Type", "float"), ("StartingVal", self.ActualValueDot_ExponentialFilterLambda),("MinVal", 0.0),("MaxVal", 1.0),("EntryWidth", self.EntryWidth),("LabelWidth", self.LabelWidth),("FontSize", self.FontSize)])]
 
-        self.EntryListWithBlinking_ReubenPython2and3ClassObject_setup_dict = dict([("GUIparametersDict", self.EntryListWithBlinking_ReubenPython2and3ClassObject_GUIparametersDict),
-                                                                              ("EntryListWithBlinking_Variables_ListOfDicts", self.EntryListWithBlinking_Variables_ListOfDicts),
-                                                                              ("DebugByPrintingVariablesFlag", 0)])
+        self.EntryListWithBlinking_SetupDict = dict([("GUIparametersDict", self.EntryListWithBlinking_GUIparametersDict),
+                                                      ("EntryListWithBlinking_Variables_ListOfDicts", self.EntryListWithBlinking_Variables_ListOfDicts),
+                                                      ("DebugByPrintingVariablesFlag", 0)])
 
         try:
-            self.EntryListWithBlinking_ReubenPython2and3ClassObject = EntryListWithBlinking_ReubenPython2and3Class(self.EntryListWithBlinking_ReubenPython2and3ClassObject_setup_dict)
-            time.sleep(0.010)
-            self.EntryListWithBlinking_OPEN_FLAG = self.EntryListWithBlinking_ReubenPython2and3ClassObject.OBJECT_CREATED_SUCCESSFULLY_FLAG
+            self.EntryListWithBlinking_Object = EntryListWithBlinking_ReubenPython2and3Class(self.EntryListWithBlinking_SetupDict)
+            self.EntryListWithBlinking_OPEN_FLAG = self.EntryListWithBlinking_Object.OBJECT_CREATED_SUCCESSFULLY_FLAG
+            
+            if self.EntryListWithBlinking_OPEN_FLAG != 1:
+                print("EntryListWithBlinking_Object __init__: EntryListWithBlinking_OPEN_FLAG == 0")
+                return
 
         except:
             exceptions = sys.exc_info()[0]
-            print("EntryListWithBlinking_ReubenPython2and3ClassObject __init__: Exceptions: %s" % exceptions, 0)
+            print("EntryListWithBlinking_Object __init__: Exceptions: %s" % exceptions)
             traceback.print_exc()
         #################################################
+        #################################################
 
+        #################################################
         #################################################
         self.Data_Label = Label(self.myFrame, text="Data_Label", width=90)
         self.Data_Label.grid(row=1, column=1, padx=5, pady=1, columnspan=1, rowspan=1)
         #################################################
+        #################################################
 
+        #################################################
         #################################################
         self.PrintToGui_Label = Label(self.myFrame, text="PrintToGui_Label", width=75)
         if self.EnableInternal_MyPrint_Flag == 1:
             self.PrintToGui_Label.grid(row=2, column=0, padx=1, pady=1, columnspan=10, rowspan=1)
         #################################################
+        #################################################
 
         #################################################
-        self.GUI_ready_to_be_updated_flag = 1
+        #################################################
+        self.EntryListWithBlinking_Object.CreateGUIobjects(TkinterParent=self.myFrame)
+        #################################################
         #################################################
 
         ################################################# INITIALIZE VARIABLES
+        #################################################
         self.UpdatePIDloopError([0.0]*self.NumberOfVariablesToTrack, [0.0]*self.NumberOfVariablesToTrack, ActualValueDot=[0.0]*self.NumberOfVariablesToTrack, DesiredValueDot=[0.0]*self.NumberOfVariablesToTrack)
+        #################################################
+        #################################################
+
+        #################################################
+        #################################################
+        self.GUI_ready_to_be_updated_flag = 1
+        #################################################
         #################################################
 
     ##########################################################################################################
@@ -815,7 +937,7 @@ class PIDcontroller_ReubenPython2and3Class(Frame): #Subclass the Tkinter Frame
 
                     #######################################################
                     if self.EntryListWithBlinking_OPEN_FLAG == 1:
-                        self.EntryListWithBlinking_ReubenPython2and3ClassObject.GUI_update_clock()
+                        self.EntryListWithBlinking_Object.GUI_update_clock()
                     #######################################################
 
                     #######################################################
