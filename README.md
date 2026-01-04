@@ -12,15 +12,15 @@ www.reubotics.com
 
 Apache 2 License
 
-Software Revision F, 09/21/2022
+Software Revision G, 12/30/2025
 
-Verified working on: 
+Verified working on:
 
-Python 2.7, 3.8.
+Python 3.12/13.
 
-Windows 8.1, 10 64-bit
+Windows 10/11 64-bit
 
-Raspberry Pi Buster 
+Raspberry Pi Bookworm
 
 (no Mac testing yet)
 
@@ -28,12 +28,12 @@ Raspberry Pi Buster
 
 ########################### Python module installation instructions, all OS's
 
-PIDcontroller_ReubenPython2and3Class, ListOfModuleDependencies: ['EntryListWithBlinking_ReubenPython2and3Class', 'future.builtins', 'LowPassFilter_ReubenPython2and3Class']
+PIDcontroller_ReubenPython2and3Class, ListOfModuleDependencies: ['EntryListWithBlinking_ReubenPython2and3Class', 'LowPassFilter_ReubenPython2and3Class', 'ReubenGithubCodeModulePaths']
 
-PIDcontroller_ReubenPython2and3Class, ListOfModuleDependencies_TestProgram: ['MyPrint_ReubenPython2and3Class']
+PIDcontroller_ReubenPython2and3Class, ListOfModuleDependencies_TestProgram: ['MyPrint_ReubenPython2and3Class', 'ReubenGithubCodeModulePaths']
 
-PIDcontroller_ReubenPython2and3Class, ListOfModuleDependencies_NestedLayers: ['future.builtins', 'numpy']
+PIDcontroller_ReubenPython2and3Class, ListOfModuleDependencies_NestedLayers: ['numpy']
 
-PIDcontroller_ReubenPython2and3Class, ListOfModuleDependencies_All: ['EntryListWithBlinking_ReubenPython2and3Class', 'future.builtins', 'LowPassFilter_ReubenPython2and3Class', 'MyPrint_ReubenPython2and3Class', 'numpy']
+PIDcontroller_ReubenPython2and3Class, ListOfModuleDependencies_All:['EntryListWithBlinking_ReubenPython2and3Class', 'LowPassFilter_ReubenPython2and3Class', 'MyPrint_ReubenPython2and3Class', 'numpy', 'ReubenGithubCodeModulePaths']
 
 ###########################
